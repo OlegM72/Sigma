@@ -1,6 +1,9 @@
 using LoginApp.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using LoginApp.Services;
 
 namespace LoginApp
 {
@@ -14,28 +17,37 @@ namespace LoginApp
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
-            // builder.Services.AddDatabaseDeveloperPageExceptionFilter(); // this is only for development (proposes to perform migrations)
 
-            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            builder.Services.AddRazorPages(); // recreate the structure of internal pages based on the project files
+
+            builder.Services.AddDatabaseDeveloperPageExceptionFilter(); // this is only for development (proposes to perform migrations)
+
+            //builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = false)
+                // .AddDefaultTokenProviders()
                 .AddEntityFrameworkStores<ApplicationDbContext>();
             builder.Services.AddControllersWithViews();
+
+            builder.Services.AddTransient<IEmailSender, EmailSender>();
+            builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
+
 
             /* https://docs.microsoft.com/en-us/aspnet/core/security/authentication/social/?view=aspnetcore-6.0&tabs=visual-studio
             // External Authentication providers setup - needs the App name, URL and registration at the social accounts
             builder.Services.AddAuthentication()
-                .AddGoogle(options => {
-                    IConfigurationSection googleAuthNSection =
-                    config.GetSection("Authentication:Google");
-                    options.ClientId = googleAuthNSection["ClientId"];
-                    options.ClientSecret = googleAuthNSection["ClientSecret"];
-                })
                 .AddFacebook(options => {
                     IConfigurationSection FBAuthNSection =
                     config.GetSection("Authentication:FB");
                     options.ClientId = FBAuthNSection["ClientId"];
                     options.ClientSecret = FBAuthNSection["ClientSecret"];
                 })
-               .AddTwitter(twitterOptions => {
+                .AddGoogle(options => {
+                    IConfigurationSection googleAuthNSection =
+                    config.GetSection("Authentication:Google");
+                    options.ClientId = googleAuthNSection["ClientId"];
+                    options.ClientSecret = googleAuthNSection["ClientSecret"];
+                })
+                .AddTwitter(twitterOptions => {
                     twitterOptions.ConsumerKey = config["Authentication:Twitter:ConsumerAPIKey"];
                     twitterOptions.ConsumerSecret = config["Authentication:Twitter:ConsumerSecret"];
                     twitterOptions.RetrieveUserDetails = true;
@@ -60,8 +72,7 @@ namespace LoginApp
                 options.Lockout.AllowedForNewUsers = true;
 
                 // User settings
-                options.User.AllowedUserNameCharacters =
-                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+                options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
                 options.User.RequireUniqueEmail = false;
             });
 
@@ -69,14 +80,12 @@ namespace LoginApp
             {
                 // Cookie settings
                 options.Cookie.HttpOnly = true;
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+                options.ExpireTimeSpan = TimeSpan.FromDays(1);
 
                 options.LoginPath = "/Identity/Account/Login";
                 options.AccessDeniedPath = "/Identity/Account/AccessDenied";
                 options.SlidingExpiration = true;
             });
-
-
 
 
             // Building the app
