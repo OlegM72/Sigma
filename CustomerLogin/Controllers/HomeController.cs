@@ -26,16 +26,20 @@ namespace CustomerLogin.Controllers
             return View();
         }
 
-        // [Authorize(Roles = "CUSTOMER")] // ... "ADMIN,RECEPTIONIST,COACH")] // do not allow this page without authorization; allow for customer role 
-                                           // but in this case Login page is authomatically called (because we only require email to be confirmed)
+        [Authorize(Roles = "Customer")] // ... "ADMIN,RECEPTIONIST,COACH")] // do not allow this page without authorization; allow for customer role 
+        // [Authorize] // do not allow this page without authorization; allow for ANY role 
         public IActionResult Privacy()
         {
+            return View();
+            /* Authorize(Roles = "Customer") also can be done this way:
+             * 
             var user = HttpContext.User.Identity; // var current_User = userManager.GetUserAsync(HttpContext.User);
             if (user.IsAuthenticated) // if user logged in and is CUSTOMER (if Auth. requires Customer, see Program.cs)
                 return View(); // Show Privacy page
             else
                 // return View("Denied"); // just show Denied page (with links to login and register pages) but don't change the URL in the address string
                 return RedirectToAction("Denied", "Home"); // in this case we MOVE to the Denied page
+            */
         }
 
         [AllowAnonymous]
